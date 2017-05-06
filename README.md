@@ -1,8 +1,7 @@
 # mru.vim
 keep track of Most Recently Viewed and Most Recently Saved files
 
-Dependencies
-============
+## Dependencies
 [fzf]
 
 ## Little explanation
