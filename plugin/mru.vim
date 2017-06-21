@@ -28,8 +28,9 @@ function! s:viewMru(mrufile)
           \  'sink':    function('s:sinkMru'),
           \  'options': '--no-sort --exact  --preview-window up:50% '.
                     \'--preview "echo {} | sed ''s#^[^/]*##'' | xargs '''.s:previewrb.''' -v" '.
+                    \'--header ''CTRL-o - open without abort(LESS) :: CTRL-s - toggle sort :: CTRL-g - toggle preview window'' '.
                     \'--bind ''ctrl-g:toggle-preview,'.
-                    \'ctrl-e:execute:$DOTFILES/fzf/fhelp.sh {} > /dev/tty''', 
+                    \'ctrl-o:execute:$DOTFILES/fzf/fhelp.sh {} > /dev/tty''', 
           \  'down':    '70%'})
 endfunction
 
