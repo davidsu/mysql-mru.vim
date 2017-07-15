@@ -1,30 +1,35 @@
-let s:bin_mrush = expand('<sfile>:h:h').'/bin/mru.zsh'
+let s:bin = expand('<sfile>:h:h').'/bin/'
 let s:previewrb = expand('<sfile>:h:h:h').'/fzf.vim/bin/preview.rb'
-function! s:get_mru_withLineNum_command()
-    return s:bin_mrush.' '.expand('%:p').' '.getpos('.')[1]
-endfunction
+let s:mruselect='SELECT @rn:=@rn+1 AS rank, _file, linenum '
+\.'    FROM ('
+\.'      SELECT *'
+\.'      FROM mru'
+\.'      ORDER BY ts DESC'
+\.'    ) t1, (SELECT @rn:=0) t2;'
+let s:mrucmd='mysql -uroot --skip-column-names --batch -e "'.s:mruselect.'" mru_vim | xargs printf ''%5s %s:%s\n'''
 
-function! s:get_mru_command()
-    return s:bin_mrush.' '.expand('%:p')
-endfunction
 
-function! s:get_mrw_command()
-    return s:bin_mrush.' '.expand('%:p').' '.getpos('.')[1].' $HOME/.mrw' 
-endfunction
+let s:mrwselect='SELECT @rn:=@rn+1 AS rank, _file, linenum '
+\.'    FROM ('
+\.'      SELECT *'
+\.'      FROM mrw'
+\.'      ORDER BY ts DESC'
+\.'    ) t1, (SELECT @rn:=0) t2;'
+let s:mrwcmd='mysql -uroot --skip-column-names --batch -e "'.s:mrwselect.'" mru_vim | xargs printf ''%5s %s:%s\n'''
 
 function! s:sinkMru(selectedFile)
     echom substitute(a:selectedFile, '^[^/]*/', '/', '')
     let cmd = substitute(a:selectedFile, '^[^/]*/', '/', '')
-    let cmd = substitute(cmd, '\([^:]*\):\(\d*\)', '+\2 \1', '')  
+    let cmd = substitute(cmd, '\(\S*\):\(\d*\)', '+\2 \1', '')  
     execute 'edit '.cmd
     if exists('*CursorPing')
         call CursorPing()
     endif
 endfunction
 
-function! s:viewMru(mrufile)
+function! s:viewMru(dbcmd)
     call fzf#run({
-          \  'source': 'tail -r '.a:mrufile.' | nl', 
+          \  'source': a:dbcmd, 
           \  'sink':    function('s:sinkMru'),
           \  'options': '--no-sort --exact  --preview-window up:50% '.
                     \'--preview "echo {} | sed ''s#^[^/]*##'' | xargs '''.s:previewrb.''' -v" '.
@@ -34,8 +39,7 @@ function! s:viewMru(mrufile)
           \  'down':    '70%'})
 endfunction
 
-
-function! s:mruIgnore()
+function! s:_mruIgnore(fileName)
     if &ft =~? 'git' ||
         \ &ft =~? 'nerdtree' ||
         \ &ft =~? 'help' ||
@@ -43,26 +47,48 @@ function! s:mruIgnore()
         \ expand('%') =~? 'yankring]' ||
         \ expand('%') =~? 'fugitiveblame' ||
         \ expand('%') =~? '/var/folders/.*nvim' ||
-        \ expand('%') =~? '\.git/index'
+        \ expand('%') =~? '\.git/index' ||
+        \ !filereadable(a:fileName)
         return 1
     endif
     return 0
 endfunction
 
-function! s:runShellCommand(command)
-    if s:mruIgnore()
+command! Mru call s:viewMru(s:mrucmd)
+command! Mrw call s:viewMru(s:mrwcmd)
+
+function! InsertMru()
+    let l:fileName = expand('%:p')
+    let l:lineNum = getpos('.')[1]
+    if s:_mruIgnore(l:fileName)
         return
     endif
-    call system(a:command)
+    let l:dbcmd = 'mysql -uroot -e "'
+                \.'use mru_vim; '
+                \.'INSERT INTO mrw (_file, linenum) VALUES ('''.l:fileName.''','.l:lineNum.') '
+                \.'ON DUPLICATE KEY UPDATE ts=now(), linenum='.l:lineNum.';"'
+    call system(l:dbcmd)
 endfunction
 
-command! Mru call s:viewMru('$HOME/.mru')
-command! Mrw call s:viewMru('$HOME/.mrw')
-
+function! InsertMru(tableName)
+    let l:fileName = expand('%:p')
+    let l:lineNum = getpos('.')[1]
+    if s:_mruIgnore(l:fileName)
+        return
+    endif
+    let l:dbcmd = 'mysql -uroot -e "'
+                \.'use mru_vim; '
+                \.'INSERT INTO '.a:tableName.' (_file, linenum) VALUES ('''.l:fileName.''','.l:lineNum.') '
+                \.'ON DUPLICATE KEY UPDATE ts=now(), linenum='.l:lineNum.';"'
+    call system(l:dbcmd)
+endfunction
+let g:dbcmd = 'bash -c ''mysql -uroot -e status || { mysql.server start && mysql -uroot -e "source '.s:bin.'schema.sql"; } > $HOME/tmp''' 
 augroup mru
     autocmd!
-    autocmd BufWritePost * call s:runShellCommand(s:get_mrw_command())
-    autocmd BufReadPost * call s:runShellCommand(s:get_mru_command())
-    autocmd BufHidden * call s:runShellCommand(s:get_mru_withLineNum_command())
-    autocmd VimLeave * call s:runShellCommand(s:get_mru_withLineNum_command())
+    autocmd BufWritePost * call InsertMru('mrw')
+    "todo don't change linenum for bufReadPost
+    autocmd BufReadPost * call InsertMru('mru')
+    autocmd BufHidden * call InsertMru('mru')
+    autocmd VimLeave * call InsertMru('mru')
+    autocmd VimEnter * call system(g:dbcmd)
 augroup END
