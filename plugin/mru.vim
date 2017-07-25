@@ -63,10 +63,17 @@ function! InsertMru(tableName)
     endif
     let l:fileName = escape(expand('%:p'), '$')
     let l:lineNum = getpos('.')[1]
+    let l:onDuplicateKey = 'ts=now()'
+    if l:lineNum == 1
+        let l:onDuplicateKey = 'ts=now()'
+    else
+        let l:onDuplicateKey = 'ts=now(), linenum='.l:lineNum
+    endif
     let l:dbcmd = 'mysql -uroot -e "'
                 \.'use mru_vim; '
                 \.'INSERT INTO '.a:tableName.' (_file, linenum) VALUES ('''.l:fileName.''','.l:lineNum.') '
-                \.'ON DUPLICATE KEY UPDATE ts=now(), linenum='.l:lineNum.';"'
+                \.'ON DUPLICATE KEY UPDATE '.l:onDuplicateKey.';"'
+    echom l:dbcmd
     call system(l:dbcmd)
 endfunction
 let g:dbcmd = 'bash -c ''mysql -uroot -e status || { mysql.server start && mysql -uroot -e "source '.s:bin.'schema.sql"; } > $HOME/tmp''' 
