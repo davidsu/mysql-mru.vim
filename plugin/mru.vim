@@ -21,6 +21,7 @@ function! s:sinkMru(selectedFile)
     echom substitute(a:selectedFile, '^[^/]*/', '/', '')
     let cmd = substitute(a:selectedFile, '^[^/]*/', '/', '')
     let cmd = substitute(cmd, '\(\S*\):\(\d*\)', '+\2 \1', '')  
+    let cmd = escape(cmd, '$')
     execute 'edit '.cmd
     if exists('*CursorPing')
         call CursorPing()
@@ -57,25 +58,12 @@ endfunction
 command! Mru call s:viewMru(s:mrucmd)
 command! Mrw call s:viewMru(s:mrwcmd)
 
-function! InsertMru()
-    let l:fileName = expand('%:p')
-    let l:lineNum = getpos('.')[1]
-    if s:_mruIgnore(l:fileName)
-        return
-    endif
-    let l:dbcmd = 'mysql -uroot -e "'
-                \.'use mru_vim; '
-                \.'INSERT INTO mrw (_file, linenum) VALUES ('''.l:fileName.''','.l:lineNum.') '
-                \.'ON DUPLICATE KEY UPDATE ts=now(), linenum='.l:lineNum.';"'
-    call system(l:dbcmd)
-endfunction
-
 function! InsertMru(tableName)
-    let l:fileName = expand('%:p')
-    let l:lineNum = getpos('.')[1]
-    if s:_mruIgnore(l:fileName)
+    if s:_mruIgnore(expand('%:p'))
         return
     endif
+    let l:fileName = escape(expand('%:p'), '$')
+    let l:lineNum = getpos('.')[1]
     let l:dbcmd = 'mysql -uroot -e "'
                 \.'use mru_vim; '
                 \.'INSERT INTO '.a:tableName.' (_file, linenum) VALUES ('''.l:fileName.''','.l:lineNum.') '
