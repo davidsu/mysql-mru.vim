@@ -73,7 +73,6 @@ function! InsertMru(tableName)
                 \.'use mru_vim; '
                 \.'INSERT INTO '.a:tableName.' (_file, linenum) VALUES ('''.l:fileName.''','.l:lineNum.') '
                 \.'ON DUPLICATE KEY UPDATE '.l:onDuplicateKey.';"'
-    echom l:dbcmd
     call system(l:dbcmd)
 endfunction
 let g:dbcmd = 'bash -c ''mysql -uroot -e status || { mysql.server start && mysql -uroot -e "source '.s:bin.'schema.sql"; } > $HOME/tmp''' 
