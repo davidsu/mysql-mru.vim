@@ -36,8 +36,7 @@ function! s:viewMru(dbcmd)
                     \'--preview "echo {} | sed ''s#^[^/]*##'' | xargs '''.s:previewrb.''' -v" '.
                     \'--header ''CTRL-o - open without abort(LESS) :: CTRL-s - toggle sort :: CTRL-g - toggle preview window'' '.
                     \'--bind ''ctrl-g:toggle-preview,'.
-                    \'ctrl-o:execute:$DOTFILES/fzf/fhelp.sh {} > /dev/tty''', 
-          \  'down':    '70%'})
+                    \'ctrl-o:execute:$DOTFILES/fzf/fhelp.sh {} > /dev/tty'''})
 endfunction
 
 function! s:_mruIgnore(fileName)
