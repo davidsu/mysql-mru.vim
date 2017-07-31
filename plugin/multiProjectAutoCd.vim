@@ -30,7 +30,7 @@ function! CdOnBufferEnter(isBufEntering)
         let g:projectsRootDic = {}
     endif
     let pwd = getcwd()
-    let gitRoot = GitRoot(expand('%:p:h'))
+    let gitRoot = utils#get_project_root(expand('%:p:h'))
     if strlen(gitRoot) < 2
         return
     endif
