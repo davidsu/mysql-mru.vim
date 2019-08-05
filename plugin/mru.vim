@@ -1,6 +1,6 @@
 let s:bin = expand('<sfile>:h:h').'/bin/'
 let s:previewrb = expand('<sfile>:h:h:h').'/fzf.vim/bin/preview.rb'
-let s:mruselect='SELECT @rn:=@rn+1 AS rank, _file, linenum '
+let s:mruselect='SELECT @rn:=@rn+1 AS \"rank\", _file, linenum '
 \.'    FROM ('
 \.'      SELECT *'
 \.'      FROM mru'
@@ -10,7 +10,7 @@ let s:mruselect='SELECT @rn:=@rn+1 AS rank, _file, linenum '
 let s:mrucmd='mysql -uroot --skip-column-names --batch -e "'.s:mruselect.'" mru_vim | xargs printf ''%5s %s:%s\n'''
 
 
-let s:mrwselect='SELECT @rn:=@rn+1 AS rank, _file, linenum '
+let s:mrwselect='SELECT @rn:=@rn+1 AS \"rank\", _file, linenum '
 \.'    FROM ('
 \.'      SELECT *'
 \.'      FROM mrw'
