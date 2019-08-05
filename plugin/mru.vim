@@ -42,6 +42,9 @@ function! s:viewMru(dbcmd)
 endfunction
 
 function! s:_mruIgnore(fileName)
+    if &ft == 'gitconfig'
+        return 0
+    endif
     if &ft =~? 'git' ||
         \ &ft =~? 'nerdtree' ||
         \ &ft =~? 'help' ||
